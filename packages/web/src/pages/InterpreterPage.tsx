@@ -77,7 +77,7 @@ const runtimeOptions = [
 
 const roleOptions = [
   {
-    value: 'arn:aws:iam::290000338583:role/GenerativeAiUseCasesStack-InterpreterRoleC2EABA37-CRU00YZ4XFZ',
+    value: import.meta.env.VITE_APP_CREATE_FUNCTION_ROLE_ARN,
     label: 'デフォルトロール',
   },
 ];
