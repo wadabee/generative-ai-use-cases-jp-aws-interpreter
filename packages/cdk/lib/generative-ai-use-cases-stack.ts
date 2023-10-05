@@ -18,20 +18,21 @@ export class GenerativeAiUseCasesStack extends Stack {
       table: database.table,
     });
 
+    const interpreter = new Interpreter(this, 'Interpreter', {
+      userPool: auth.userPool,
+      api: api.api,
+    });
+
     const web = new Web(this, 'Api', {
       apiEndpointUrl: api.api.url,
       userPoolId: auth.userPool.userPoolId,
       userPoolClientId: auth.client.userPoolClientId,
       idPoolId: auth.idPool.identityPoolId,
       predictStreamFunctionArn: api.predictStreamFunction.functionArn,
+      createFunctionRoleArn: interpreter.createFunctionRole.roleArn
     });
 
     new Rag(this, 'Rag', {
-      userPool: auth.userPool,
-      api: api.api,
-    });
-
-    new Interpreter(this, 'Interpreter', {
       userPool: auth.userPool,
       api: api.api,
     });
@@ -58,6 +59,10 @@ export class GenerativeAiUseCasesStack extends Stack {
 
     new CfnOutput(this, 'PredictStreamFunctionArn', {
       value: api.predictStreamFunction.functionArn,
+    });
+
+    new CfnOutput(this, 'CreateFunctionRoleArn',{
+      value: interpreter.createFunctionRole.roleArn
     });
   }
 }

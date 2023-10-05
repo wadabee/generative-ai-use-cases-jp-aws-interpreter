@@ -20,6 +20,7 @@ export interface InterpreterProps {
  * AWS Interpreter を実行するためのリソースを作成する
  */
 export class Interpreter extends Construct {
+  readonly createFunctionRole: iam.Role;
   constructor(scope: Construct, id: string, props: InterpreterProps) {
     super(scope, id);
 
@@ -36,10 +37,20 @@ export class Interpreter extends Construct {
         actions: ['lambda:CreateFunction'],
       })
     );
+
+    const createFunctionRole = new iam.Role(this, 'Role',{
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AWSLambda_FullAccess')
+      ]
+    });
+
+    this.createFunctionRole = createFunctionRole;
+
     createFunction.role?.addToPrincipalPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        resources: ['arn:aws:iam::536301430581:role/AwsInterpreterLambda'],
+        resources: [createFunctionRole.roleArn],
         actions: ['iam:PassRole'],
       })
     );
