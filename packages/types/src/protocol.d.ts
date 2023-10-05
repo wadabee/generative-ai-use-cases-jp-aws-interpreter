@@ -75,3 +75,19 @@ export type RetrieveKendraRequest = {
 };
 
 export type RetrieveKendraResponse = RetrieveCommandOutput;
+
+export type CreateLambdaFunctionRequest = {
+  functionName: string;
+  runtime: string;
+  role: string;
+  code: string;
+};
+
+export type UpdateLambdaFunctionRequest = {
+  functionName: string;
+  code: string;
+};
+
+export type ExistsLambdaFunctionRequest = {
+  functionName: string;
+};
