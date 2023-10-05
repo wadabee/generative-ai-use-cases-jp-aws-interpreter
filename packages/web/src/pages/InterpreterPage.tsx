@@ -32,7 +32,7 @@ const useInterpreterPageState = create<StateType>((set) => {
         functionName: s,
       }));
     },
-    roleArn: 'arn:aws:iam::536301430581:role/AwsInterpreterLambda',
+    roleArn: import.meta.env.VITE_APP_CREATE_FUNCTION_ROLE_ARN,
     setRoleArn: (s: string) => {
       set(() => ({
         roleArn: s,
@@ -77,7 +77,7 @@ const runtimeOptions = [
 
 const roleOptions = [
   {
-    value: 'arn:aws:iam::536301430581:role/AwsInterpreterLambda',
+    value: import.meta.env.VITE_APP_CREATE_FUNCTION_ROLE_ARN,
     label: 'デフォルトロール',
   },
 ];
