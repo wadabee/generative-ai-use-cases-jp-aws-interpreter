@@ -54,6 +54,29 @@ const useHttp = () => {
       return useSWR<Data, Error>(url, fetcher, config);
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getOnce: <RES = any, DATA = any>(
+      url: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      errorProcess?: (err: any) => void
+    ) => {
+      return new Promise<AxiosResponse<RES>>((resolve, reject) => {
+        api
+          .get<RES, AxiosResponse<RES>, DATA>(url)
+          .then((data) => {
+            resolve(data);
+          })
+          .catch((err) => {
+            if (errorProcess) {
+              errorProcess(err);
+            } else {
+              // alert.openError(getErrorMessage(err));
+            }
+            reject(err);
+          });
+      });
+    },
+
     /**
      * POST Request
      * @param url

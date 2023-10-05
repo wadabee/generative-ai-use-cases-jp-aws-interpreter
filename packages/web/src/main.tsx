@@ -11,6 +11,7 @@ import GenerateMessage from './pages/GenerateMessage.tsx';
 import NotFound from './pages/NotFound.tsx';
 import KendraSearchPage from './pages/KendraSearchPage.tsx';
 import RagPage from './pages/RagPage.tsx';
+import InterpreterPage from './pages/InterpreterPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
       {
         path: '/kendra',
         element: <KendraSearchPage />,
+      },
+      {
+        path: '/interpreter',
+        element: <InterpreterPage />,
       },
       {
         path: '*',

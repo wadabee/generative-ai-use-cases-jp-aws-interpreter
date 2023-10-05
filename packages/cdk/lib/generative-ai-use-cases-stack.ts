@@ -2,6 +2,7 @@ import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Auth, Api, Web, Database } from './construct';
 import { Rag } from './construct/rag';
+import { Interpreter } from './construct/interpreter';
 
 export class GenerativeAiUseCasesStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -26,6 +27,11 @@ export class GenerativeAiUseCasesStack extends Stack {
     });
 
     new Rag(this, 'Rag', {
+      userPool: auth.userPool,
+      api: api.api,
+    });
+
+    new Interpreter(this, 'Interpreter', {
       userPool: auth.userPool,
       api: api.api,
     });

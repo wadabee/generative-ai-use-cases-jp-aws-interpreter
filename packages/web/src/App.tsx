@@ -11,6 +11,7 @@ import {
   PiEnvelope,
   PiMagnifyingGlass,
   PiChatsCircle,
+  PiTerminal,
 } from 'react-icons/pi';
 import { Outlet } from 'react-router-dom';
 import Drawer from './components/Drawer';
@@ -37,6 +38,11 @@ const items = [
     label: 'RAG チャット',
     to: '/rag',
     icon: <PiChatCircleText />,
+  },
+  {
+    label: 'AWS Interpreter',
+    to: '/interpreter',
+    icon: <PiTerminal />,
   },
   {
     label: '要約',

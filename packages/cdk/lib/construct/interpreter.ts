@@ -1,0 +1,107 @@
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
+import { UserPool } from 'aws-cdk-lib/aws-cognito';
+import { Duration } from 'aws-cdk-lib';
+import {
+  AuthorizationType,
+  CognitoUserPoolsAuthorizer,
+  LambdaIntegration,
+  RestApi,
+} from 'aws-cdk-lib/aws-apigateway';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+
+export interface InterpreterProps {
+  userPool: UserPool;
+  api: RestApi;
+}
+
+/**
+ * AWS Interpreter を実行するためのリソースを作成する
+ */
+export class Interpreter extends Construct {
+  constructor(scope: Construct, id: string, props: InterpreterProps) {
+    super(scope, id);
+
+    // Lambda
+    const createFunction = new NodejsFunction(this, 'CreateLambdaFunction', {
+      runtime: Runtime.NODEJS_18_X,
+      entry: './lambda/createLambdaFunction.ts',
+      timeout: Duration.minutes(15),
+    });
+    createFunction.role?.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: ['*'],
+        actions: ['lambda:CreateFunction'],
+      })
+    );
+    createFunction.role?.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: ['arn:aws:iam::536301430581:role/AwsInterpreterLambda'],
+        actions: ['iam:PassRole'],
+      })
+    );
+
+    const updateFunction = new NodejsFunction(this, 'UpdateLambdaFunction', {
+      runtime: Runtime.NODEJS_18_X,
+      entry: './lambda/updateLambdaFunction.ts',
+      timeout: Duration.minutes(15),
+    });
+    updateFunction.role?.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: ['*'],
+        actions: ['lambda:UpdateFunctionCode'],
+      })
+    );
+
+    const getArnFunction = new NodejsFunction(this, 'GetFunctionArn', {
+      runtime: Runtime.NODEJS_18_X,
+      entry: './lambda/getLambdaArn.ts',
+      timeout: Duration.minutes(15),
+    });
+    getArnFunction.role?.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: ['*'],
+        actions: ['lambda:GetFunction'],
+      })
+    );
+
+    // API Gateway
+    const authorizer = new CognitoUserPoolsAuthorizer(this, 'Authorizer', {
+      cognitoUserPools: [props.userPool],
+    });
+
+    const commonAuthorizerProps = {
+      authorizationType: AuthorizationType.COGNITO,
+      authorizer,
+    };
+    const ragResource = props.api.root.addResource('interpreter');
+
+    const lambdaResource = ragResource.addResource('lambda');
+    // POST: /lambda
+    lambdaResource.addMethod(
+      'POST',
+      new LambdaIntegration(createFunction),
+      commonAuthorizerProps
+    );
+    // PUT: /lambda
+    lambdaResource.addMethod(
+      'PUT',
+      new LambdaIntegration(updateFunction),
+      commonAuthorizerProps
+    );
+
+    const arnResource = lambdaResource.addResource('arn');
+    const getArnResource = arnResource.addResource('{functionName}');
+    // GET: /lambda/arn/{functionName}
+    getArnResource.addMethod(
+      'GET',
+      new LambdaIntegration(getArnFunction),
+      commonAuthorizerProps
+    );
+  }
+}
