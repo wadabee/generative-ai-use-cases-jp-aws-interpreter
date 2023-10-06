@@ -38,11 +38,11 @@ export class Interpreter extends Construct {
       })
     );
 
-    const createFunctionRole = new iam.Role(this, 'Role',{
+    const createFunctionRole = new iam.Role(this, 'Role', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('AWSLambda_FullAccess')
-      ]
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AWSLambdaExecute'),
+      ],
     });
 
     this.createFunctionRole = createFunctionRole;

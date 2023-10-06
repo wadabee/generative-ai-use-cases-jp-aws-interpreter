@@ -12,21 +12,19 @@ import PromptTemplatePageBase from './PromptTemplatePageBase';
 import useInterpreter from '../hooks/useInterpreter';
 import {
   PiCheckCircleBold,
+  PiCheckCircleThin,
   PiLightningBold,
   PiRocketLaunchBold,
   PiSlidersBold,
   PiSpinnerGap,
+  PiSpinnerGapThin,
   PiXCircleBold,
 } from 'react-icons/pi';
 import ModalDialog from '../components/ModalDialog';
 import ExpandedField from '../components/ExpandedField';
 import { produce } from 'immer';
+import { TestCaseType, TestResultType } from '../@types/interpreter';
 
-type TestCaseType = {
-  describe?: string;
-  input: string | object;
-  output: string | object;
-};
 type StateType = {
   functionName: string;
   setFunctionName: (s: string) => void;
@@ -42,8 +40,8 @@ type StateType = {
   setTestData: (s: string) => void;
   testCases: TestCaseType[];
   setTestCases: (c: TestCaseType[]) => void;
-  testResults: ('pass' | 'fail' | 'testing')[];
-  setTestResults: (r: ('pass' | 'fail' | 'testing')[]) => void;
+  testResults: TestResultType[];
+  setTestResults: (r: TestResultType[]) => void;
 };
 
 const useInterpreterPageState = create<StateType>((set) => {
@@ -149,6 +147,8 @@ const InterpreterPage: React.FC = () => {
   const [loadingDeploy, setLoadingDeploy] = useState(false);
   const [loadingTest, setLoadingTest] = useState(false);
   const [loadingGenerateTestData, setLoadingGenerateTestData] = useState(false);
+  const [loadingFunctionName, setLoadingFunctionName] = useState(false);
+  const [disabledDeploy, setDisabledDeploy] = useState(true);
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
 
   const onClickExec = useCallback(() => {
@@ -242,29 +242,40 @@ const InterpreterPage: React.FC = () => {
   const onClickTest = useCallback(() => {
     setLoadingTest(true);
     setIsOpenTest(true);
-    setTestResults(new Array(testCases.length).fill('testing'));
+    setTestResults(
+      new Array(testCases.length).fill({
+        status: 'testing',
+        result: '',
+      })
+    );
     Promise.all(
       testCases.map((c, idx) => {
         invokeFunction({
           functionName,
           payload: c.input,
         })
-          .then(() => {
+          .then((res) => {
             setTestResults(
               produce(
                 useInterpreterPageState.getState().testResults,
                 (draft) => {
-                  draft[idx] = 'pass';
+                  draft[idx] = {
+                    status: res.data === c.output ? 'pass' : 'fail',
+                    result: res.data,
+                  };
                 }
               )
             );
           })
-          .catch(() => {
+          .catch((e) => {
             setTestResults(
               produce(
                 useInterpreterPageState.getState().testResults,
                 (draft) => {
-                  draft[idx] = 'fail';
+                  draft[idx] = {
+                    status: 'fail',
+                    result: e,
+                  };
                 }
               )
             );
@@ -275,14 +286,35 @@ const InterpreterPage: React.FC = () => {
     });
   }, [functionName, invokeFunction, setTestResults, testCases]);
 
+  const onClickFixCode = useCallback(() => {
+    postChat(
+      interpreterPrompt.fixFaildedTest(
+        testCases.map((c, idx) => ({
+          ...c,
+          result: testResults[idx].result,
+        }))
+      )
+    );
+    setIsOpenTest(false);
+    setIsOpen(false);
+  }, [postChat, testCases, testResults]);
+
   const functionNameRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    const listener = async () => {
-      setShouldUpdate(false);
+    const listener = () => {
+      setDisabledDeploy(true);
       if (functionName === '') {
         return;
       }
-      setShouldUpdate(await existsFunction(functionName));
+      setLoadingFunctionName(true);
+      existsFunction(functionName)
+        .then((exists) => {
+          setShouldUpdate(exists);
+          setDisabledDeploy(false);
+        })
+        .finally(() => {
+          setLoadingFunctionName(false);
+        });
     };
     const ref = functionNameRef.current;
     ref?.addEventListener('focusout', listener);
@@ -292,15 +324,10 @@ const InterpreterPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [functionName]);
 
-  // useEffect(() => {
-  //   setShouldUpdate(false);
-  //   if (functionName !== '') {
-  //     existsFunction(functionName).then((exists) => {
-  //       setShouldUpdate(exists);
-  //     });
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [functionName]);
+  useEffect(() => {
+    setDisabledDeploy(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [functionName]);
 
   return (
     <div>
@@ -328,18 +355,25 @@ const InterpreterPage: React.FC = () => {
                     Lambda 関数の基本情報
                   </div>
                 </div>
-                <InputText
-                  ref={functionNameRef}
-                  label="関数名"
-                  value={functionName}
-                  onChange={setFunctionName}
-                />
-                {functionName !== '' && shouldUpdate && (
-                  <div className="-mt-2 text-sm font-semibold text-red-500">
-                    既に Lambda 関数[{functionName}
-                    ]が存在します。デプロイすると上書きされます。
+                <div className="relative">
+                  <InputText
+                    ref={functionNameRef}
+                    label="関数名"
+                    value={functionName}
+                    onChange={setFunctionName}
+                  />
+                  <div className="absolute right-2 top-7 text-3xl">
+                    {disabledDeploy && !loadingFunctionName && (
+                      <PiCheckCircleThin />
+                    )}
+                    {!disabledDeploy && (
+                      <PiCheckCircleBold className="text-green-600" />
+                    )}
+                    {loadingFunctionName && (
+                      <PiSpinnerGapThin className="animate-spin" />
+                    )}
                   </div>
-                )}
+                </div>
                 <Select
                   label="ロール"
                   value={roleArn}
@@ -358,10 +392,16 @@ const InterpreterPage: React.FC = () => {
                     LLM が生成した最新のコードを Lambda
                     関数としてデプロイします。
                   </div>
+                  {functionName !== '' && shouldUpdate && (
+                    <div className="text-sm font-semibold text-red-500">
+                      既に Lambda 関数[{functionName}
+                      ]が存在します。デプロイすると上書きされます。
+                    </div>
+                  )}
                 </div>
                 <div className="">
                   <Button
-                    disabled={functionName === ''}
+                    disabled={disabledDeploy}
                     loading={loadingDeploy}
                     onClick={onClickDeploy}>
                     デプロイ
@@ -405,17 +445,18 @@ const InterpreterPage: React.FC = () => {
                 </div>
                 <div className="flex flex-col items-end">
                   <Button
-                    disabled={functionName === '' || loadingGenerateTestData}
-                    loading={loadingTest}
-                    onClick={onClickTest}>
-                    テスト実行
-                  </Button>
-                  <Button
                     disabled={loadingTest}
-                    className="mt-3 whitespace-nowrap"
+                    className="whitespace-nowrap"
                     loading={loadingGenerateTestData}
                     onClick={onClickGenerateTestData}>
                     データ生成
+                  </Button>
+                  <Button
+                    className="mt-3 whitespace-nowrap"
+                    disabled={disabledDeploy || loadingGenerateTestData}
+                    loading={loadingTest}
+                    onClick={onClickTest}>
+                    テスト実行
                   </Button>
                 </div>
               </div>
@@ -425,14 +466,14 @@ const InterpreterPage: React.FC = () => {
       )}
       <ModalDialog isOpen={isOpenTest} title="テスト実行">
         <>
-          {testResults.filter((r) => r === 'pass').length ===
+          {testResults.filter((r) => r.status === 'pass').length ===
             testResults.length && (
             <div className="flex items-center font-bold text-green-600">
               <PiCheckCircleBold className="mr-1" />
               テストが全て PASS しました。
             </div>
           )}
-          {testResults.includes('fail') && (
+          {testResults.filter((r) => r.status === 'fail').length > 0 && (
             <div className="flex items-center font-bold text-red-600">
               <PiXCircleBold className="mr-1" />
               FAIL したテストケースがあります。
@@ -440,16 +481,16 @@ const InterpreterPage: React.FC = () => {
           )}
           {testCases.map((c, idx) => {
             return (
-              <div>
+              <div key={idx}>
                 <div className="flex items-center">
                   <div className="mr-1">
-                    {testResults[idx] === 'testing' && (
+                    {testResults[idx]?.status === 'testing' && (
                       <PiSpinnerGap className="animate-spin" />
                     )}
-                    {testResults[idx] === 'pass' && (
+                    {testResults[idx]?.status === 'pass' && (
                       <PiCheckCircleBold className="text-green-600" />
                     )}
-                    {testResults[idx] === 'fail' && (
+                    {testResults[idx]?.status === 'fail' && (
                       <PiXCircleBold className="text-red-600" />
                     )}
                   </div>
@@ -460,12 +501,25 @@ const InterpreterPage: React.FC = () => {
                   <div className="ml-6">
                     <div>入力データ: {JSON.stringify(c.input)}</div>
                     <div>期待値: {JSON.stringify(c.output)}</div>
+                    <div>
+                      実行結果: {JSON.stringify(testResults[idx]?.result)}
+                    </div>
                   </div>
                 </ExpandedField>
               </div>
             );
           })}
-          <div className="flex justify-end">
+          <div className="flex justify-between">
+            {testResults.filter((r) => r.status === 'fail').length > 0 && (
+              <Button
+                loading={loadingTest}
+                onClick={() => {
+                  onClickFixCode();
+                }}>
+                コード修正を依頼する
+              </Button>
+            )}
+
             <Button
               loading={loadingTest}
               onClick={() => {
@@ -496,9 +550,6 @@ const InterpreterPage: React.FC = () => {
           />
 
           <div className="flex justify-end gap-3">
-            {/* <Button outlined onClick={onClickClear} disabled={!isEmpty}>
-            クリア
-          </Button> */}
             <Button onClick={onClickExec}>実行</Button>
           </div>
         </Card>

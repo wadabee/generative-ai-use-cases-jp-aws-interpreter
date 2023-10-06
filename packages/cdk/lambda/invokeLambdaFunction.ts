@@ -16,6 +16,8 @@ export const handler = async (
 
     const res = await client.send(command);
 
+    console.log(req, res);
+
     return {
       statusCode: res.StatusCode ?? 500,
       headers: {

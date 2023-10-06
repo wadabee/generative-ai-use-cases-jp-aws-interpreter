@@ -1,3 +1,5 @@
+import { TestCaseType } from '../@types/interpreter';
+
 export default {
   systemContext: (runtime: string) => {
     return `あなたはAWS Lambda関数を生成するAIアシスタントです。
@@ -32,5 +34,28 @@ ${context}`;
   output: "Lambda関数のOUTPUT"
 }[]
 `;
+  },
+  fixFaildedTest: (
+    testResults: (TestCaseType | { result: string | object })[]
+  ) => {
+    return `以下のテストケースで期待値通りに動きませんでした。
+以下の手順でソースコードを修正してください。
+
+# ソースコードの修正手順
+* 「# テスト結果」の中身を全て理解してください。フォーマットは「# テスト結果のフォーマット」の通りとなります。
+* 期待値通りの出力になるように、コードを修正してください。
+* 修正したコードだけを出力してください。その他の文言は一切出力しないでください。「ありがとう」「すみません」などという雑談も一切不要です。例外はありません。
+
+# テスト結果のフォーマット
+{
+  describe: "テストデータの解説",
+  input: "Lambda関数に実際にINPUTした値",
+  result: "Lambda関数が実際にOUTPUTした値",
+  output: "期待値"
+}[]
+
+# テスト結果
+${JSON.stringify(testResults)}
+    `;
   },
 };
