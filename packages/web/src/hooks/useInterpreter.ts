@@ -1,12 +1,28 @@
 import {
   CreateLambdaFunctionRequest,
+  InvokeLambdaFunctionRequest,
+  UnrecordedMessage,
   UpdateLambdaFunctionRequest,
 } from 'generative-ai-use-cases-jp';
 import useHttp from './useHttp';
+import useChatApi from './useChatApi';
+import interpreterPrompt from '../prompts/interpreter-prompt';
 
 const useInterpreter = () => {
   const http = useHttp();
+  const { predict } = useChatApi();
   return {
+    generateTestData: (messages: UnrecordedMessage[]) => {
+      return predict({
+        messages: [
+          ...messages,
+          {
+            role: 'user',
+            content: interpreterPrompt.generationTestData(),
+          },
+        ],
+      });
+    },
     existsFunction: async (functionName: string) => {
       const res = await http.getOnce<string>(
         `interpreter/lambda/arn/${functionName}`
@@ -24,6 +40,9 @@ const useInterpreter = () => {
         'interpreter/lambda',
         params
       );
+    },
+    invokeFunction: (params: InvokeLambdaFunctionRequest) => {
+      return http.post('interpreter/lambda/invoke', params);
     },
   };
 };

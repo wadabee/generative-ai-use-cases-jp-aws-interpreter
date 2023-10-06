@@ -15,7 +15,9 @@ const ExpandedField: React.FC<Props> = (props) => {
   return (
     <RowItem notItem={props.notItem}>
       <div
-        className="mb-1 flex cursor-pointer items-center text-sm font-semibold"
+        className={`${
+          props.className ?? ''
+        } mb-1 flex cursor-pointer items-center text-sm font-semibold`}
         onClick={() => {
           setExpanded(!expanded);
         }}>

@@ -88,6 +88,7 @@ export type UpdateLambdaFunctionRequest = {
   code: string;
 };
 
-export type ExistsLambdaFunctionRequest = {
+export type InvokeLambdaFunctionRequest = {
   functionName: string;
+  payload: string | object;
 };

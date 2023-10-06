@@ -6,6 +6,7 @@ type Props = RowItemProps & {
   label?: string;
   placeholder?: string;
   hint?: string;
+  rows?: number;
   optional?: boolean;
   noBorder?: boolean;
   onChange: (value: string) => void;
@@ -54,7 +55,7 @@ const Textarea: React.FC<Props> = (props) => {
         } ${
           props.noBorder ? 'border-0 focus:ring-0 ' : 'border border-black/30'
         } `}
-        rows={1}
+        rows={props.rows ?? 1}
         placeholder={props.placeholder}
         value={props.value}
         onChange={(e) => {

@@ -81,6 +81,19 @@ export class Interpreter extends Construct {
       })
     );
 
+    const invokeFunction = new NodejsFunction(this, 'InvokeFunctionArn', {
+      runtime: Runtime.NODEJS_18_X,
+      entry: './lambda/invokeLambdaFunction.ts',
+      timeout: Duration.minutes(15),
+    });
+    invokeFunction.role?.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: ['*'],
+        actions: ['lambda:InvokeFunction'],
+      })
+    );
+
     // API Gateway
     const authorizer = new CognitoUserPoolsAuthorizer(this, 'Authorizer', {
       cognitoUserPools: [props.userPool],
@@ -103,6 +116,14 @@ export class Interpreter extends Construct {
     lambdaResource.addMethod(
       'PUT',
       new LambdaIntegration(updateFunction),
+      commonAuthorizerProps
+    );
+
+    const invokeResource = lambdaResource.addResource('invoke');
+    // POST: /lambda/invoke
+    invokeResource.addMethod(
+      'POST',
+      new LambdaIntegration(invokeFunction),
       commonAuthorizerProps
     );
 
