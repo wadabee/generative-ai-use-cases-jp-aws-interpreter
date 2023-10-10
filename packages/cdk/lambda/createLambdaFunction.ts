@@ -10,7 +10,17 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   try {
     const req: CreateLambdaFunctionRequest = JSON.parse(event.body!);
-    zip.file('index.js', req.code);
+    const setZipFileName = (runtime: string): string => {
+      if (runtime.startsWith('nodejs')) {
+        return 'index.js';
+      } else if (runtime.startsWith('python')) {
+        return 'index.py';
+      } else {
+        throw new Error("Unknown Runtime.");
+      }
+    }
+    const zipFileName = setZipFileName(req.runtime);
+    zip.file(zipFileName, req.code);
     const zipFile = await zip.generateAsync({ type: 'uint8array' });
 
     const client = new LambdaClient({});
