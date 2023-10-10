@@ -10,7 +10,8 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   try {
     const req: CreateLambdaFunctionRequest = JSON.parse(event.body!);
-    zip.file('index.js', req.code);
+    const zipFileName = req.runtime === 'python3.11' ? 'index.py' : 'index.js'
+    zip.file(zipFileName, req.code);
     const zipFile = await zip.generateAsync({ type: 'uint8array' });
 
     const client = new LambdaClient({});
