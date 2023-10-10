@@ -141,7 +141,8 @@ const InterpreterPage: React.FC = () => {
   } = useInterpreterPageState();
 
   const { pathname } = useLocation();
-  const { postChat, messages, isEmpty } = useChat(pathname);
+  const { postChat, messages, isEmpty, updateSystemContext } =
+    useChat(pathname);
   const [isOpen, setIsOpen] = useState(false);
   const [isOpenTest, setIsOpenTest] = useState(false);
   const [loadingDeploy, setLoadingDeploy] = useState(false);
@@ -150,6 +151,11 @@ const InterpreterPage: React.FC = () => {
   const [loadingFunctionName, setLoadingFunctionName] = useState(false);
   const [disabledDeploy, setDisabledDeploy] = useState(true);
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
+
+  useEffect(() => {
+    updateSystemContext(interpreterPrompt.systemContext(runtime));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runtime]);
 
   const onClickExec = useCallback(() => {
     postChat(interpreterPrompt.generationContext(context));
