@@ -24,6 +24,7 @@ import ModalDialog from '../components/ModalDialog';
 import ExpandedField from '../components/ExpandedField';
 import { produce } from 'immer';
 import { TestCaseType, TestResultType } from '../@types/interpreter';
+import {isEqual} from "lodash"
 
 type StateType = {
   functionName: string;
@@ -266,7 +267,7 @@ const InterpreterPage: React.FC = () => {
                 useInterpreterPageState.getState().testResults,
                 (draft) => {
                   draft[idx] = {
-                    status: res.data === c.output ? 'pass' : 'fail',
+                    status: isEqual(res.data, c.output) ? "pass" : "fail",
                     result: res.data,
                   };
                 }
