@@ -24,7 +24,7 @@ import ModalDialog from '../components/ModalDialog';
 import ExpandedField from '../components/ExpandedField';
 import { produce } from 'immer';
 import { TestCaseType, TestResultType } from '../@types/interpreter';
-import { deepStrictEqual } from 'node:assert';
+import {isEqual} from "lodash"
 
 type StateType = {
   functionName: string;
@@ -267,7 +267,7 @@ const InterpreterPage: React.FC = () => {
                 useInterpreterPageState.getState().testResults,
                 (draft) => {
                   try {
-                    deepStrictEqual(res.data, c.output);
+                    isEqual(res.data, c.output);
                     draft[idx] = {
                       status: 'pass',
                       result: res.data,
