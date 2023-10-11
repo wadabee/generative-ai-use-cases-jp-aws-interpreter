@@ -24,6 +24,7 @@ import ModalDialog from '../components/ModalDialog';
 import ExpandedField from '../components/ExpandedField';
 import { produce } from 'immer';
 import { TestCaseType, TestResultType } from '../@types/interpreter';
+import { deepStrictEqual } from 'node:assert';
 
 type StateType = {
   functionName: string;
@@ -265,10 +266,18 @@ const InterpreterPage: React.FC = () => {
               produce(
                 useInterpreterPageState.getState().testResults,
                 (draft) => {
-                  draft[idx] = {
-                    status: JSON.stringify(res.data) === JSON.stringify(c.output) ? 'pass' : 'fail',
-                    result: res.data,
-                  };
+                  try {
+                    deepStrictEqual(res.data, c.output);
+                    draft[idx] = {
+                      status: 'pass',
+                      result: res.data,
+                    };
+                  } catch {
+                    draft[idx] = {
+                      status: 'fail',
+                      result: res.data,
+                    };
+                  }
                 }
               )
             );
