@@ -266,18 +266,10 @@ const InterpreterPage: React.FC = () => {
               produce(
                 useInterpreterPageState.getState().testResults,
                 (draft) => {
-                  try {
-                    isEqual(res.data, c.output);
-                    draft[idx] = {
-                      status: 'pass',
-                      result: res.data,
-                    };
-                  } catch {
-                    draft[idx] = {
-                      status: 'fail',
-                      result: res.data,
-                    };
-                  }
+                  draft[idx] = {
+                    status: isEqual(res.data, c.output) ? "pass" : "fail",
+                    result: res.data,
+                  };
                 }
               )
             );
