@@ -266,7 +266,7 @@ const InterpreterPage: React.FC = () => {
                 useInterpreterPageState.getState().testResults,
                 (draft) => {
                   draft[idx] = {
-                    status: res.data === c.output ? 'pass' : 'fail',
+                    status: JSON.stringify(res.data) === JSON.stringify(c.output) ? 'pass' : 'fail',
                     result: res.data,
                   };
                 }
